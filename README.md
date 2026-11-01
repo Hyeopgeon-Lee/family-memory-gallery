@@ -8,9 +8,17 @@
 - Supabase Auth 및 PostgreSQL (별도 신규 프로젝트)
 - Cloudflare Workers API, **비공개** Cloudflare R2
 
+## DB 운영 대상 (2026-11-01)
+
+- 조직: `Family Memories` (기존 업무용 조직과 분리)
+- **서울 리전 운영 DB:** `family-memory-gallery-seoul` · `https://ulwkigdzmubyhtqvyzwe.supabase.co`
+- 기존 아일랜드 DB `ssaviinhspcqrmlaunpj`: 데이터 0건 확인 후 일시중지, 삭제하지 않음
+- Supabase 마이그레이션 3개와 7개 테이블 RLS: **적용 및 검증 완료**
+- 미완료: Auth Redirect URL, GitHub Actions Variables, Cloudflare R2/Workers 실제 배포 및 E2E 테스트
+
 ## 초기 설정
 
-1. 새 Supabase 프로젝트를 만들어 SQL Editor에서 `supabase/migrations/0001_initial.sql` 다음 `supabase/migrations/0002_atomic_invite.sql`, `supabase/migrations/0003_foreign_key_indexes.sql`을 **순서대로** 실행. 기존 업무용 프로젝트에는 실행하지 마세요.
+1. **완료:** Family Memories 조직의 서울 리전(`ap-northeast-2`) 프로젝트 `ulwkigdzmubyhtqvyzwe`에 마이그레이션 3개, RLS, 인덱스 적용. **기존 업무용 프로젝트에는 적용하지 마세요.**
 2. Supabase Auth에서 이메일 인증과 필요한 SMTP를 설정. Site URL 및 Redirect URL에 https://family.k-bigdata.kr 등록.
 3. Cloudflare R2 비공개 버킷 `family-media-private` (Standard)을 만들고 `r2-cors.json`의 CORS 규칙 설정. S3 API 토큰 생성.
 4. Cloudflare Workers Secrets에 `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` 등록. `npm run worker:deploy` 명령으로 배포.
