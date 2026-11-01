@@ -41,10 +41,7 @@ npm run worker:deploy
 
 ## 3. GitHub Pages
 
-1. Repository > Settings > Secrets and variables > Actions > **Variables**에 아래 3개를 추가합니다.
-   - `VITE_SUPABASE_URL`: Supabase Project URL
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`: 브라우저용 publishable 키
-   - `VITE_API_BASE_URL`: Workers 배포 URL (마지막 / 제외)
+1. **완료:** GitHub Pages 빌드 워크플로에 서울 Supabase 공개 URL과 브라우저용 publishable 키를 설정했습니다. 남은 **Repository Variables**는 `VITE_API_BASE_URL` (실제 Workers 배포 URL, 마지막 `/` 제외) 하나입니다. 기존에 등록된 아일랜드 프로젝트용 변수가 있으면 정리하세요.
 2. **절대** `SUPABASE_SECRET_KEY`나 R2 API 키를 GitHub Actions Variables에 넣지 마세요.
 3. Settings > Pages > Build and deployment > Source: **GitHub Actions**.
 4. Settings > Pages > Custom domain: `family.k-bigdata.kr`을 저장합니다. 저장소의 `public/CNAME`만으로 Settings 설정이 완료되지는 않습니다.
@@ -110,9 +107,9 @@ Cloudflare API 토큰에는 최소 권한만 부여하고 코드에 커밋하지
 
 1. **완료:** 신규 조직 `Family Memories` 접근 및 서울 프로젝트 ID `ulwkigdzmubyhtqvyzwe` 확인.
 2. **완료:** 마이그레이션 3개 실행, RLS와 Advisor 검증.
-3. Supabase 이메일 인증과 Redirect URL, Publishable Key 설정.
+3. Supabase 이메일 인증과 Redirect URL 설정 (서울 프로젝트 publishable key는 Pages 워크플로에 적용 완료).
 4. R2 비공개 버킷 및 Worker Secret 설정 후 Workers 실제 배포.
-5. GitHub Actions Variables에 공개용 Supabase URL/Publishable Key 및 Worker URL을 입력해 재배포.
+5. GitHub Actions Variables에 실제 `VITE_API_BASE_URL`만 입력해 재배포 (서울 프로젝트 URL 및 publishable key는 배포 워크플로에 반영 완료).
 6. 정상 가족/미초대 사용자로 로그인 및 R2 이미지/영상 업로드·열람/권한 차단 테스트.
 
 ## 8. 가족 Supabase 서울 리전 이전 결과 (2026-11-01)
@@ -129,6 +126,6 @@ Cloudflare API 토큰에는 최소 권한만 부여하고 코드에 커밋하지
 - Performance Advisor: 테이블이 비어 있어 사용되지 않은 인덱스 INFO만 남음.
 - **이전 아일랜드 프로젝트:** `ssaviinhspcqrmlaunpj` (`eu-west-1`)는 원래 Auth 사용자/가족/미디어/스토리지 데이터 0건 확인 후 **일시중지** (Supabase 상태 `INACTIVE`). **삭제하지 않음**. 복구 시 무료 활성 프로젝트 한도 또는 비용을 확인해야 함.
 - 기존 업무용 Supabase 프로젝트 `kopo-professor-union`은 수정하지 않음.
-- 아직 미완료: Supabase Auth Redirect URL 및 SMTP 설정, GitHub Actions 공개 변수 3개, Cloudflare R2 비공개 버킷/Workers 실제 배포, 가족 최초 관리자 가입 및 가족 생성, 로그인·업로드 통합 테스트.
+- 아직 미완료: Supabase Auth Redirect URL 및 SMTP 설정, GitHub Actions `VITE_API_BASE_URL` 설정, Cloudflare R2 비공개 버킷/Workers 실제 배포, 가족 최초 관리자 가입 및 가족 생성, 로그인·업로드 통합 테스트.
 - 반드시 **서울 프로젝트의 publishable key와 secret key**를 사용. 아일랜드 프로젝트의 키나 URL을 다시 사용하지 말 것.
 - 채팅에 공유된 과거 DB 비밀번호는 **운영 전에 교체 권장**, GitHub 저장소와 프런트엔드 변수에 저장하지 말 것.
