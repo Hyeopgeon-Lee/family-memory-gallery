@@ -20,8 +20,13 @@
 
 ## 2. Cloudflare R2 및 Workers
 
+**최신 원클릭 자동 배포 및 보안 키 등록 안내:** [docs/CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md).
+
+**2026-11-01 실제 확인:** [GitHub Actions 사전 점검](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41301354529) 결과, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `SUPABASE_SECRET_KEY` 다섯 개 Secret이 등록되지 않았습니다. 현재 Cloudflare R2/Workers 자체는 아직 프로비저닝되지 않았고, Secret 등록 후 GitHub Actions 수동 실행으로 자동 구축할 수 있습니다.
+
+
 1. Cloudflare > R2 > Create Bucket: `family-media-private`, Storage class **Standard**, Public access **OFF**.
-2. 버킷 CORS 규칙에 `r2-cors.json`을 반영합니다. 브라우저의 PUT 요청 응답에 ETag가 노출되는지 점검합니다.
+2. Cloudflare 대시보드에는 `r2-cors.json` (S3 표기) 적용, Wrangler 자동 실행 시에는 `r2-cors-wrangler.json` (Cloudflare API 표기) 사용. 브라우저 PUT 응답의 ETag 및 영상 Range CORS 헤더를 점검합니다.
 3. Account ID와 R2 S3 API Access Key ID / Secret Access Key를 확인합니다.
 4. 프로젝트 루트에서 `npm install`을 실행한 후, 아래 비밀키들을 등록합니다.
 
