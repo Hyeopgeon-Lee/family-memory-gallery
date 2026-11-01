@@ -1,0 +1,10 @@
+name = "family-memory-gallery-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+CORS_ORIGIN = "https://family.k-bigdata.kr"
+R2_BUCKET = "family-media-private"
+MAX_FAMILY_BYTES = "8589934592"
