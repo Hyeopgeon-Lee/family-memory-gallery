@@ -109,16 +109,10 @@ async function handle(req: Request, env: Env): Promise<Response> {
     const code = text(b.token, 200);
     assert(code.length >= 32, 400, '유효하지 않은 초대 코드입니다.');
     const hash = await sha256(code);
-    const { data: invitation } = await db.from('invitations').select('*').eq('token_hash', hash).is('used_at', null).gt('expires_at', new Date().toISOString()).maybeSingle();
-    assert(invitation, 404, '초대가 만료되었거나 유효하지 않습니다.');
-    assert(user.email.toLowerCase() === invitation.email.toLowerCase(), 403, '초대받은 이메일 계정으로 로그인하세요.');
-    const { data: claimed } = await db.from('invitations').update({ used_at: new Date().toISOString() })
-      .eq('id', invitation.id).is('used_at', null).select('id').maybeSingle();
-    assert(claimed, 409, '이미 사용된 초대입니다.');
-    const { error } = await db.from('family_members').upsert({
-      family_id: invitation.family_id, user_id: user.id, role: invitation.role, status: 'active'
-    }, { onConflict: 'family_id,user_id' });
-    assert(!error, 500, '초대 처리에 실패했습니다.');
+    const { error: acceptError } = await db.rpc('accept_family_invite', {
+      p_hash: hash, p_actor: user.id
+    });
+    assert(!acceptError, 409, '초대가 만료되었거나 이메일이 일치하지 않습니다.');
     return json({ ok: true });
   }
 
