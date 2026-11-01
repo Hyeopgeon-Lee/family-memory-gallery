@@ -8,8 +8,8 @@
 
 ## 1. Supabase
 
-1. https://supabase.com/dashboard 에서 새 프로젝트를 만듭니다(대한민국이면 Seoul 리전).
-2. SQL Editor에서 `supabase/migrations/0001_initial.sql`, `supabase/migrations/0002_atomic_invite.sql`, `supabase/migrations/0003_foreign_key_indexes.sql`을 순서대로 실행합니다.
+1. **완료:** `Family Memories` 조직의 서울 리전 프로젝트 `family-memory-gallery-seoul` (`ulwkigdzmubyhtqvyzwe`)가 생성되었습니다.
+2. **완료:** `0001_initial.sql`, `0002_atomic_invite.sql`, `0003_foreign_key_indexes.sql`에 해당하는 마이그레이션 세 개를 서울 DB에 순서대로 적용했습니다.
 3. Database > Security Advisor와 Performance Advisor에서 경고를 점검합니다.
 4. Data API > Settings에서 `public` 스키마가 노출되는지 확인합니다. 2026년 이후 새 프로젝트의 테이블 API 노출은 최소 권한 GRANT 정책에 영향을 받을 수 있으므로 `families`, `family_members`, `albums`, `media`, `invitations`, `comments`, `audit_logs`와 RPC `reserve_media_upload`을 **서버 secret key로 실제 읽기/쓰기 테스트**하세요.
 5. Project Settings > API Keys에서 브라우저용 `sb_publishable_...` 및 Worker용 `sb_secret_...` 키를 별도 확인합니다.
@@ -108,23 +108,27 @@ Cloudflare API 토큰에는 최소 권한만 부여하고 코드에 커밋하지
 
 ## 7. 배포 마무리 순서
 
-1. ChatGPT Supabase 앱에서 가족용 신규 조직 접근 권한을 승인하고 가족 프로젝트 ID를 확인.
-2. 해당 프로젝트에 마이그레이션 두 개를 순서대로 적용한 후 RLS 및 Advisor 검증.
+1. **완료:** 신규 조직 `Family Memories` 접근 및 서울 프로젝트 ID `ulwkigdzmubyhtqvyzwe` 확인.
+2. **완료:** 마이그레이션 3개 실행, RLS와 Advisor 검증.
 3. Supabase 이메일 인증과 Redirect URL, Publishable Key 설정.
 4. R2 비공개 버킷 및 Worker Secret 설정 후 Workers 실제 배포.
 5. GitHub Actions Variables에 공개용 Supabase URL/Publishable Key 및 Worker URL을 입력해 재배포.
 6. 정상 가족/미초대 사용자로 로그인 및 R2 이미지/영상 업로드·열람/권한 차단 테스트.
 
-## 8. 가족 Supabase 실구축 완료 상태 (2026-11-01)
+## 8. 가족 Supabase 서울 리전 이전 결과 (2026-11-01)
 
-- Supabase 조직: `Family Memories` (전용 조직).
-- 프로젝트 ID: `ssaviinhspcqrmlaunpj`, PostgreSQL 17, EU West (Ireland) 리전.
-- 프로젝트 URL: `https://ssaviinhspcqrmlaunpj.supabase.co`.
-- 적용 완료: `initial_family_gallery`, `atomic_family_invite`, `family_gallery_foreign_key_indexes`.
-- `public` 테이블 7개 모두 RLS 켜짐, 현재 초기 데이터 0건.
-- `invitations`, `audit_logs`는 클라이언트 읽기/쓰기 정책이 없는 서버 전용 테이블이며 Security Advisor INFO 2건은 의도된 차단 설정.
-- 익명 역할은 `media` SELECT 불가, authenticated 역할은 RLS 통과한 행만 SELECT 가능.
-- `reserve_media_upload`, `accept_family_invite` RPC 실행 권한은 `service_role`만 있고 `anon`/`authenticated`는 없음 (DB 권한 확인 완료).
-- 신규 프로젝트는 아일랜드 리전이며, 지리적 서울 리전으로 변경하려면 별도의 프로젝트 생성 및 이전이 필요함.
-- 미완료: Supabase Auth Redirect URL 및 SMTP, GitHub Actions 공개 설정 3개, Cloudflare R2 비공개 버킷·Workers 실제 연결, 가입한 최초 관리자의 가족 데이터 생성, E2E 테스트.
-- 가족용 프로젝트 DB 비밀번호가 채팅에 입력되었으므로 운영 전에 Supabase Dashboard에서 비밀번호를 교체할 것을 권장. 비밀번호 자체를 소스나 문서에 기록하지 말 것.
+- 신규 운영 대상: Supabase 조직 `Family Memories` · 프로젝트 `family-memory-gallery-seoul`
+- **운영 프로젝트 ID: `ulwkigdzmubyhtqvyzwe`**
+- **운영 URL: `https://ulwkigdzmubyhtqvyzwe.supabase.co`**
+- **리전: Seoul `ap-northeast-2`**, PostgreSQL 17 · 상태 `ACTIVE_HEALTHY`
+- **무료 플랜 생성 비용 확인: 월 USD 0** (실사용량과 향후 요금제 변경은 별도).
+- 3개 마이그레이션 적용 완료: `initial_family_gallery`, `atomic_family_invite`, `family_gallery_foreign_key_indexes`.
+- 서울 DB `public` 테이블 7개 모두 RLS 활성화 확인. 모든 초기 데이터 0건.
+- 권한 확인: `anon` 역할의 `media` SELECT 불가. `reserve_media_upload` 및 `accept_family_invite` RPC는 `service_role`만 EXECUTE 가능하고 `anon`/`authenticated`는 불가.
+- Supabase Security Advisor: `invitations`, `audit_logs`에 SELECT RLS policy가 없다는 INFO 2건. 이 테이블은 서버 전용으로 클라이언트 접근을 차단하도록 설계됨.
+- Performance Advisor: 테이블이 비어 있어 사용되지 않은 인덱스 INFO만 남음.
+- **이전 아일랜드 프로젝트:** `ssaviinhspcqrmlaunpj` (`eu-west-1`)는 원래 Auth 사용자/가족/미디어/스토리지 데이터 0건 확인 후 **일시중지** (Supabase 상태 `INACTIVE`). **삭제하지 않음**. 복구 시 무료 활성 프로젝트 한도 또는 비용을 확인해야 함.
+- 기존 업무용 Supabase 프로젝트 `kopo-professor-union`은 수정하지 않음.
+- 아직 미완료: Supabase Auth Redirect URL 및 SMTP 설정, GitHub Actions 공개 변수 3개, Cloudflare R2 비공개 버킷/Workers 실제 배포, 가족 최초 관리자 가입 및 가족 생성, 로그인·업로드 통합 테스트.
+- 반드시 **서울 프로젝트의 publishable key와 secret key**를 사용. 아일랜드 프로젝트의 키나 URL을 다시 사용하지 말 것.
+- 채팅에 공유된 과거 DB 비밀번호는 **운영 전에 교체 권장**, GitHub 저장소와 프런트엔드 변수에 저장하지 말 것.
