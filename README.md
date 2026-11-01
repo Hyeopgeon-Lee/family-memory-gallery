@@ -10,7 +10,7 @@
 
 ## 초기 설정
 
-1. 새 Supabase 프로젝트를 만들어 SQL Editor에서 `supabase/migrations/0001_initial.sql` 다음 `supabase/migrations/0002_atomic_invite.sql`을 **순서대로** 실행. 기존 업무용 프로젝트에는 실행하지 마세요.
+1. 새 Supabase 프로젝트를 만들어 SQL Editor에서 `supabase/migrations/0001_initial.sql` 다음 `supabase/migrations/0002_atomic_invite.sql`, `supabase/migrations/0003_foreign_key_indexes.sql`을 **순서대로** 실행. 기존 업무용 프로젝트에는 실행하지 마세요.
 2. Supabase Auth에서 이메일 인증과 필요한 SMTP를 설정. Site URL 및 Redirect URL에 https://family.k-bigdata.kr 등록.
 3. Cloudflare R2 비공개 버킷 `family-media-private` (Standard)을 만들고 `r2-cors.json`의 CORS 규칙 설정. S3 API 토큰 생성.
 4. Cloudflare Workers Secrets에 `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` 등록. `npm run worker:deploy` 명령으로 배포.
