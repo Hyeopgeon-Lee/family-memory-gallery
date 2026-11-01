@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://family.k-bigdata.kr",
+          "http://localhost:5173"
+        ],
+        "methods": [
+          "GET",
+          "HEAD",
+          "PUT"
+        ],
+        "headers": [
+          "Content-Type",
+          "Range",
+          "x-amz-*"
+        ]
+      },
+      "exposeHeaders": [
+        "ETag",
+        "Content-Length",
+        "Content-Range",
+        "Accept-Ranges"
+      ],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}
