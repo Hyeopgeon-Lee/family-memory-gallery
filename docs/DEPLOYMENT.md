@@ -84,3 +84,20 @@ npm run worker:deploy
 - 부하·요금 측정, 상세 오류 알림 및 자동화 통합 테스트
 
 **상태 안내:** 이 문서는 배포 설정과 테스트를 위한 것이며, 실제 DNS·Supabase·R2 연동 성공을 의미하지 않습니다.
+
+## 5. Cloudflare Workers 자동 배포 (선택)
+
+GitHub Actions `Deploy Cloudflare Workers API`를 수동 실행할 수 있도록 구성했습니다.
+초기 R2 버킷과 Worker Secrets는 위 안내대로 한 번 직접 설정해야 합니다.
+GitHub 저장소의 Settings > Secrets and variables > Actions > **Repository secrets**에
+`CLOUDFLARE_API_TOKEN` (Workers Scripts Edit, 필요한 경우 R2 관련 최소 권한),
+`CLOUDFLARE_ACCOUNT_ID`를 지정한 다음 Actions > Deploy Cloudflare Workers API > Run workflow를 실행하세요.
+Cloudflare API 토큰에는 최소 권한만 부여하고 코드에 커밋하지 마세요.
+
+## 6. 현재 실행 상태 (2026-11-01)
+
+- TypeScript 검사 및 React/Vite 빌드: GitHub Actions **성공** — [검증 실행](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41294931288)
+- GitHub Pages 배포: 현재 **실패** — [배포 실행](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41294931281)
+- 실패 원인: 저장소 GitHub Pages 기능이 비활성화되어 `actions/configure-pages`가 Get Pages site 404를 반환했습니다.
+- 해결: [Settings > Pages](https://github.com/Hyeopgeon-Lee/family-memory-gallery/settings/pages)에서 Build and deployment > Source를 GitHub Actions로 지정하고 Custom Domain을 `family.k-bigdata.kr`로 지정하세요.
+- Supabase 및 R2 계정/프로젝트 연결은 아직 완료된 상태로 확인되지 않았습니다.
