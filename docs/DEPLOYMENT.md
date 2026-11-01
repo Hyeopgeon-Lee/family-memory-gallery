@@ -94,10 +94,23 @@ GitHub 저장소의 Settings > Secrets and variables > Actions > **Repository se
 `CLOUDFLARE_ACCOUNT_ID`를 지정한 다음 Actions > Deploy Cloudflare Workers API > Run workflow를 실행하세요.
 Cloudflare API 토큰에는 최소 권한만 부여하고 코드에 커밋하지 마세요.
 
-## 6. 현재 실행 상태 (2026-11-01)
+## 6. 2026-11-01 검증된 배포 상태
 
-- TypeScript 검사 및 React/Vite 빌드: GitHub Actions **성공** — [검증 실행](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41294931288)
-- GitHub Pages 배포: 현재 **실패** — [배포 실행](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41294931281)
-- 실패 원인: 저장소 GitHub Pages 기능이 비활성화되어 `actions/configure-pages`가 Get Pages site 404를 반환했습니다.
-- 해결: [Settings > Pages](https://github.com/Hyeopgeon-Lee/family-memory-gallery/settings/pages)에서 Build and deployment > Source를 GitHub Actions로 지정하고 Custom Domain을 `family.k-bigdata.kr`로 지정하세요.
-- Supabase 및 R2 계정/프로젝트 연결은 아직 완료된 상태로 확인되지 않았습니다.
+- CI (TypeScript, Vite build, Cloudflare Worker bundle dry-run): **성공**
+  - https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41296649634
+- GitHub Pages 최신 배포: **성공**
+  - https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41296649684
+- `family.k-bigdata.kr` DNS/HTTPS 실접속 및 클라이언트 런타임 로그인: 별도 검증 필요.
+- Supabase: 기존 `kopo-professor-union` 프로젝트를 **절대 변경하지 말 것**. 가족용 **별도 Supabase 조직/프로젝트**에만 마이그레이션.
+- Cloudflare R2/Workers: GitHub Actions 배포 워크플로 코드 준비 완료, 실제 R2 및 Worker 배포·연동 미확인.
+- ChatGPT Supabase MCP 연결이 조직별 OAuth 승인을 사용하는 경우 새 조직 연결 승인을 받아야 신규 프로젝트가 목록에 표시될 수 있음.
+- **DB 비밀번호를 코드, 문서, GitHub Actions 변수, 브라우저 환경변수에 넣지 말 것.** 필요한 경우 대시보드에서 교체.
+
+## 7. 배포 마무리 순서
+
+1. ChatGPT Supabase 앱에서 가족용 신규 조직 접근 권한을 승인하고 가족 프로젝트 ID를 확인.
+2. 해당 프로젝트에 마이그레이션 두 개를 순서대로 적용한 후 RLS 및 Advisor 검증.
+3. Supabase 이메일 인증과 Redirect URL, Publishable Key 설정.
+4. R2 비공개 버킷 및 Worker Secret 설정 후 Workers 실제 배포.
+5. GitHub Actions Variables에 공개용 Supabase URL/Publishable Key 및 Worker URL을 입력해 재배포.
+6. 정상 가족/미초대 사용자로 로그인 및 R2 이미지/영상 업로드·열람/권한 차단 테스트.
