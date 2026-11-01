@@ -86,7 +86,7 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
     setBusy(true);setMessage('');
     try {
       if (signup) {
-        const {data,error} = await supa.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin}});
+        const {data,error} = await supa.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin + window.location.pathname + window.location.search}});
         if(error) throw error;
         setMessage(data.session ? '가입했습니다. 가족 초대 링크를 사용해 주세요.' : '확인 메일을 보냈습니다. 이메일 인증 후 로그인해 주세요.');
         if(data.session) onSignedIn();
