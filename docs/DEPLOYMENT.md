@@ -9,7 +9,7 @@
 ## 1. Supabase
 
 1. https://supabase.com/dashboard 에서 새 프로젝트를 만듭니다(대한민국이면 Seoul 리전).
-2. SQL Editor에서 `supabase/migrations/0001_initial.sql`을 그대로 실행합니다.
+2. SQL Editor에서 `supabase/migrations/0001_initial.sql`, `supabase/migrations/0002_atomic_invite.sql`을 순서대로 실행합니다.
 3. Database > Security Advisor와 Performance Advisor에서 경고를 점검합니다.
 4. Data API > Settings에서 `public` 스키마가 노출되는지 확인합니다. 2026년 이후 새 프로젝트의 테이블 API 노출은 최소 권한 GRANT 정책에 영향을 받을 수 있으므로 `families`, `family_members`, `albums`, `media`, `invitations`, `comments`, `audit_logs`와 RPC `reserve_media_upload`을 **서버 secret key로 실제 읽기/쓰기 테스트**하세요.
 5. Project Settings > API Keys에서 브라우저용 `sb_publishable_...` 및 Worker용 `sb_secret_...` 키를 별도 확인합니다.
