@@ -17,7 +17,7 @@ interface Env {
   MAX_FAMILY_BYTES: string;
 }
 type Member = { family_id: string; user_id: string; role: string; status: string };
-type Context = { db: ReturnType<typeof createClient>; user: { id: string; email?: string; email_confirmed_at?: string }; member: Member | null; s3: S3Client; env: Env };
+type Context = { db: ReturnType<typeof createClient<any, 'public'>>; user: { id: string; email?: string; email_confirmed_at?: string }; member: Member | null; s3: S3Client; env: Env };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_PHOTO = 25 * 1024 * 1024;
 const MAX_VIDEO = 500 * 1024 * 1024;
