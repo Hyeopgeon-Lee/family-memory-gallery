@@ -22,6 +22,24 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const MAX_PHOTO = 25 * 1024 * 1024;
 const MAX_VIDEO = 500 * 1024 * 1024;
 const PART_SIZE = 10 * 1024 * 1024;
+// Check actual file signatures after upload; MIME headers alone are untrusted.
+async function verifyMediaSignature(s3: S3Client, bucket: string, key: string, mime: string): Promise<boolean> {
+  const object = await s3.send(new GetObjectCommand({
+    Bucket: bucket, Key: key, Range: 'bytes=0-31'
+  }));
+  if (!object.Body) return false;
+  const head = await object.Body.transformToByteArray();
+  if (mime === 'image/jpeg') return head.length >= 3 &&
+    head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
+  if (mime === 'image/png') return head.length >= 8 &&
+    [0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a].every((n,i) => head[i] === n);
+  if (mime === 'image/webp') return head.length >= 12 &&
+    String.fromCharCode(...head.slice(0,4)) === 'RIFF' &&
+    String.fromCharCode(...head.slice(8,12)) === 'WEBP';
+  if (mime === 'video/mp4') return head.length >= 12 &&
+    String.fromCharCode(...head.slice(4,8)) === 'ftyp';
+  return false;
+}
 class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
 function assert(condition: unknown, status: number, message: string): asserts condition {
   if (!condition) throw new HttpError(status, message);
@@ -296,7 +314,9 @@ async function handle(req: Request, env: Env): Promise<Response> {
         }));
       }
       const head = await c.s3.send(new HeadObjectCommand({ Bucket: env.R2_BUCKET, Key: row.storage_key }));
-      if (Number(head.ContentLength) !== Number(row.size_bytes) || head.ContentType !== row.mime_type) {
+      const signatureOk = await verifyMediaSignature(c.s3, env.R2_BUCKET, row.storage_key, row.mime_type);
+      if (Number(head.ContentLength) !== Number(row.size_bytes) ||
+          head.ContentType !== row.mime_type || !signatureOk) {
         await c.s3.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET, Key: row.storage_key }));
         await db.from('media').update({ status: 'failed', upload_id: null }).eq('id', row.id);
         throw new HttpError(422, '파일 크기 또는 형식 확인에 실패했습니다.');
