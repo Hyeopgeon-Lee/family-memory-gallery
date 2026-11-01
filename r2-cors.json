@@ -11,10 +11,14 @@
     ],
     "AllowedHeaders": [
       "Content-Type",
+      "Range",
       "x-amz-*"
     ],
     "ExposeHeaders": [
-      "ETag"
+      "ETag",
+      "Content-Length",
+      "Content-Range",
+      "Accept-Ranges"
     ],
     "MaxAgeSeconds": 3600
   }
