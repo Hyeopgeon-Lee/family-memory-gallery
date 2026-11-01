@@ -8,3 +8,6 @@ workers_dev = true
 CORS_ORIGIN = "https://family.k-bigdata.kr"
 R2_BUCKET = "family-media-private"
 MAX_FAMILY_BYTES = "8589934592"
+
+[triggers]
+crons = ["0 2 * * *"]
