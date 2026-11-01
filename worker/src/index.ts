@@ -181,7 +181,7 @@ async function handle(req: Request, env: Env): Promise<Response> {
   if (path === '/api/storage/usage' && method === 'GET') {
     const { data, error } = await db.from('media').select('size_bytes,status').eq('family_id', member.family_id);
     assert(!error, 500, '용량을 조회하지 못했습니다.');
-    const used = (data || []).filter(r => ['pending','uploading','ready'].includes(r.status))
+    const used = (data || []).filter(r => ['pending','uploading','ready','deleted'].includes(r.status))
       .reduce((sum, r) => sum + Number(r.size_bytes), 0);
     return json({ usedBytes: used, maxBytes: Number(env.MAX_FAMILY_BYTES) });
   }
