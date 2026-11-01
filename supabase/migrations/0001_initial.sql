@@ -132,7 +132,7 @@ begin
  end if;
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_family::text,0));
  select coalesce(sum(size_bytes),0) into total
-   from public.media where family_id=p_family and status in ('pending','uploading','ready');
+   from public.media where family_id=p_family and status in ('pending','uploading','ready','deleted');
  if total+p_bytes>p_max then raise exception 'storage quota exceeded'; end if;
  rec.id:=pg_catalog.gen_random_uuid();
  rec.family_id:=p_family;
