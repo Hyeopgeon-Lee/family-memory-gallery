@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json && vite build",
     "check": "tsc -p tsconfig.json && tsc -p worker/tsconfig.json",
     "worker:dev": "wrangler dev -c worker/wrangler.toml",
-    "worker:deploy": "wrangler deploy -c worker/wrangler.toml"
+    "worker:deploy": "wrangler deploy -c worker/wrangler.toml",
+    "worker:bundle": "wrangler deploy --dry-run -c worker/wrangler.toml"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.900.0",
