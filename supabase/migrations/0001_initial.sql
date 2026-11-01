@@ -98,6 +98,8 @@ alter table public.comments enable row level security;
 alter table public.audit_logs enable row level security;
 revoke all on public.families,public.family_members,public.albums,public.media,public.invitations,public.comments,public.audit_logs from anon,authenticated;
 grant select on public.families,public.family_members,public.albums,public.media,public.comments to authenticated;
+-- Explicit Data API grants for server-only Worker using sb_secret_ API key.
+grant select,insert,update,delete on public.families,public.family_members,public.albums,public.media,public.invitations,public.comments,public.audit_logs to service_role;
 create policy family_select on public.families for select to authenticated
   using(private.member_role(id) is not null);
 create policy membership_select on public.family_members for select to authenticated
