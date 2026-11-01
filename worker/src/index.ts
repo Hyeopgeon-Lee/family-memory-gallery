@@ -386,7 +386,7 @@ async function cleanup(env: Env): Promise<void> {
   }
 }
 export default {
-  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> { await cleanup(env); },
+  async scheduled(_event: unknown, env: Env): Promise<void> { await cleanup(env); },
   async fetch(req: Request, env: Env): Promise<Response> {
     const headers = cors(req, env);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
