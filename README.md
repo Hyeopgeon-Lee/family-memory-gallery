@@ -22,7 +22,7 @@
 2. Supabase Auth에서 이메일 인증과 필요한 SMTP를 설정. Site URL 및 Redirect URL에 https://family.k-bigdata.kr 등록.
 3. Cloudflare R2 비공개 버킷 `family-media-private` (Standard)을 만들고 `r2-cors.json`의 CORS 규칙 설정. S3 API 토큰 생성.
 4. Cloudflare Workers Secrets에 `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` 등록. `npm run worker:deploy` 명령으로 배포.
-5. GitHub Actions Variables에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` 등록.
+5. **서울 Supabase URL과 publishable 키는 Pages 워크플로에 반영 완료.** Cloudflare Workers 배포 후 GitHub Actions Variables에 `VITE_API_BASE_URL`만 추가.
 6. Settings > Pages > Source = GitHub Actions 및 Custom Domain = family.k-bigdata.kr 설정. DNS `family CNAME Hyeopgeon-Lee.github.io` 추가.
 7. 첫 관리자 이메일 가입/인증 후 아래 SQL을 Supabase SQL Editor에서 **한 번만** 실행. 이후 UI에서 초대 링크 발급.
 
