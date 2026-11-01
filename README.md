@@ -16,12 +16,14 @@
 - Supabase 마이그레이션 3개와 7개 테이블 RLS: **적용 및 검증 완료**
 - 미완료: Auth Redirect URL, GitHub Actions Variables, Cloudflare R2/Workers 실제 배포 및 E2E 테스트
 
+**Cloudflare 배포 안내:** [R2·Workers 자동 구축 및 비밀키 등록 절차](docs/CLOUDFLARE_SETUP.md)
+
 ## 초기 설정
 
 1. **완료:** Family Memories 조직의 서울 리전(`ap-northeast-2`) 프로젝트 `ulwkigdzmubyhtqvyzwe`에 마이그레이션 3개, RLS, 인덱스 적용. **기존 업무용 프로젝트에는 적용하지 마세요.**
 2. Supabase Auth에서 이메일 인증과 필요한 SMTP를 설정. Site URL 및 Redirect URL에 https://family.k-bigdata.kr 등록.
-3. Cloudflare R2 비공개 버킷 `family-media-private` (Standard)을 만들고 `r2-cors.json`의 CORS 규칙 설정. S3 API 토큰 생성.
-4. Cloudflare Workers Secrets에 `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` 등록. `npm run worker:deploy` 명령으로 배포.
+3. GitHub Actions Secrets에 Cloudflare API Token/Account ID를 등록하고 [Provision private R2 and deploy family API](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/workflows/deploy-worker.yml)를 실행하면, 비공개 `family-media-private` 버킷 및 Wrangler CORS 정책을 자동 생성/설정할 수 있습니다. 이후 R2 S3 API Token을 발급해 서버용 Secrets에 추가합니다.
+4. GitHub Actions Secrets에 R2 Access Key ID/Secret 및 서울 Supabase Secret Key를 추가한 뒤 같은 워크플로를 재실행하면, Worker Secrets를 직접 노출하지 않고 배포합니다. 실제 배포는 **Secret 등록 전까지 보류**됩니다.
 5. **서울 Supabase URL과 publishable 키는 Pages 워크플로에 반영 완료.** Cloudflare Workers 배포 후 GitHub Actions Variables에 `VITE_API_BASE_URL`만 추가.
 6. Settings > Pages > Source = GitHub Actions 및 Custom Domain = family.k-bigdata.kr 설정. DNS `family CNAME Hyeopgeon-Lee.github.io` 추가.
 7. 첫 관리자 이메일 가입/인증 후 아래 SQL을 Supabase SQL Editor에서 **한 번만** 실행. 이후 UI에서 초대 링크 발급.
