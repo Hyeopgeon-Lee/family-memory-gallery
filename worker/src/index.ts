@@ -352,7 +352,41 @@ async function handle(req: Request, env: Env): Promise<Response> {
   }
   return json({ error: '존재하지 않는 API입니다.' }, 404);
 }
+// Daily cleanup: reclaim abandoned uploads after 24h and trash after 30 days.
+// Only objects whose DB rows still satisfy the retention condition are processed.
+async function cleanup(env: Env): Promise<void> {
+  const db = createClient(env.SUPABASE_URL,env.SUPABASE_SECRET_KEY,
+    {auth:{persistSession:false,autoRefreshToken:false}});
+  const s3 = s3Client(env);
+  const abandoned = new Date(Date.now()-24*60*60*1000).toISOString();
+  const expired = new Date(Date.now()-30*24*60*60*1000).toISOString();
+  const {data: stale} = await db.from('media').select('*')
+    .in('status',['pending','uploading','failed']).lt('created_at',abandoned).limit(100);
+  for(const row of stale || []) {
+    try {
+      if(row.upload_id) await s3.send(new AbortMultipartUploadCommand({
+        Bucket:env.R2_BUCKET,Key:row.storage_key,UploadId:row.upload_id
+      }));
+      await s3.send(new DeleteObjectCommand({Bucket:env.R2_BUCKET,Key:row.storage_key}));
+      await db.from('media').delete().eq('id',row.id).in('status',['pending','uploading','failed']).lt('created_at',abandoned);
+    } catch { /* Retry on next cron; never log filenames or signed URLs. */ }
+  }
+  const {data: trash} = await db.from('media').select('*').eq('status','deleted')
+    .lt('deleted_at',expired).limit(100);
+  for(const row of trash || []) {
+    try {
+      // Avoid removing an object just restored by a user.
+      const {data: current} = await db.from('media').select('status,deleted_at').eq('id',row.id).maybeSingle();
+      if(current?.status!=='deleted' || !current.deleted_at || current.deleted_at>=expired) continue;
+      await s3.send(new DeleteObjectCommand({Bucket:env.R2_BUCKET,Key:row.storage_key}));
+      if(row.thumbnail_key) await s3.send(new DeleteObjectCommand({Bucket:env.R2_BUCKET,Key:row.thumbnail_key}));
+      await db.from('comments').delete().eq('media_id',row.id);
+      await db.from('media').delete().eq('id',row.id).eq('status','deleted').lt('deleted_at',expired);
+    } catch { /* Retry on next cron. */ }
+  }
+}
 export default {
+  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> { await cleanup(env); },
   async fetch(req: Request, env: Env): Promise<Response> {
     const headers = cors(req, env);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
