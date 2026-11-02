@@ -105,6 +105,16 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
     } catch (e) { setMessage(e instanceof Error ? e.message : '인증 메일을 다시 보내지 못했습니다.'); }
     finally { setBusy(false); }
   };
+  const sendPasswordReset = async () => {
+    if (!supa || !email.trim() || busy) return;
+    setBusy(true); setMessage('');
+    try {
+      const {error} = await supa.auth.resetPasswordForEmail(email.trim(), {redirectTo:PRODUCTION_AUTH_CALLBACK_URL});
+      if (error) throw error;
+      setMessage('비밀번호 설정 링크를 이메일로 보냈습니다. 메일을 확인해 주세요.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : '비밀번호 재설정 이메일을 보내지 못했습니다.'); }
+    finally { setBusy(false); }
+  };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); if(!supa) return;
     setBusy(true);setMessage('');
@@ -143,6 +153,7 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
           <button className="btn primary full" disabled={busy}>{busy?'처리 중...':signup?'가입하기':'가족 앨범 들어가기'} <ChevronRight size={18}/></button>
         </form>
         {message && <p className="notice" role="status">{message}</p>}
+        {!signup && <button type="button" className="text-link" disabled={busy || !email.trim()} onClick={()=>void sendPasswordReset()}>비밀번호를 잊으셨나요? 이메일로 재설정</button>}
         {signup && <button type="button" className="text-link" disabled={busy || !email.trim()} onClick={()=>void resendConfirmation()}>{emailSent?'인증 메일 다시 받기':'인증 메일이 오지 않았나요? 다시 보내기'}</button>}
         <button className="text-link" onClick={()=>{setSignup(!signup);setMessage('');}}>{signup?'이미 계정이 있나요? 로그인':'처음 방문하셨나요? 계정 만들기'}</button>
         <p className="privacy"><LockKeyhole size={14}/> 사진과 영상은 비공개 저장소에 보관됩니다.</p>
@@ -177,6 +188,11 @@ function App() {
   const [trash,setTrash] = useState<DeletedMedia[]>([]);
   const [usage,setUsage] = useState({usedBytes:0,maxBytes:8589934592});
   const [menu,setMenu] = useState(false);
+  const [passwordDialog,setPasswordDialog] = useState(false);
+  const [passwordCandidate,setPasswordCandidate] = useState('');
+  const [passwordConfirmation,setPasswordConfirmation] = useState('');
+  const [passwordSaving,setPasswordSaving] = useState(false);
+  const [passwordError,setPasswordError] = useState('');
   const flash = (s:string) => {setToast(s);};
   const reload = useCallback(async () => {
     if(!supa)return;
@@ -195,7 +211,7 @@ function App() {
   useEffect(()=>{
     if(!supa){setChecking(false);return;}
     void supa.auth.getSession().then(({data})=>{setSession(data.session);setChecking(false);});
-    const {data:sub}=supa.auth.onAuthStateChange((_event,s)=>{setSession(s);if(!s){setMe(null);setAlbums([]);setMedia([]);}});
+    const {data:sub}=supa.auth.onAuthStateChange((_event,s)=>{setSession(s);if(_event==='PASSWORD_RECOVERY')setPasswordDialog(true);if(!s){setMe(null);setAlbums([]);setMedia([]);}});
     return ()=>sub.subscription.unsubscribe();
   },[]);
   useEffect(()=>{if(session) void reload();},[session?.user.id,reload]);
@@ -320,6 +336,32 @@ function App() {
     try{await api('/media/'+m.id+'/restore',{method:'POST'});setTrash(old=>old.filter(x=>x.id!==m.id));await reload();flash('사진을 복원했습니다.');}
     catch(e){flash(e instanceof Error?e.message:'복원 실패');}
   };
+  const saveNewPassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!supa || passwordSaving) return;
+    if (passwordCandidate.length < 12) {setPasswordError('12자 이상의 비밀번호를 설정하세요.');return;}
+    if (passwordCandidate !== passwordConfirmation) {setPasswordError('새 비밀번호가 일치하지 않습니다.');return;}
+    setPasswordSaving(true);setPasswordError('');
+    try {
+      const {error} = await supa.auth.updateUser({password:passwordCandidate});
+      if (error) throw error;
+      setPasswordCandidate('');setPasswordConfirmation('');setPasswordDialog(false);
+      flash('비밀번호를 안전하게 변경했습니다.');
+    } catch(error){setPasswordError(error instanceof Error?error.message:'비밀번호 변경에 실패했습니다.');}
+    finally{setPasswordSaving(false);}
+  };
+  const passwordModal = passwordDialog ? <div className="modal-scrim" role="presentation" onClick={()=>setPasswordDialog(false)}>
+    <div className="modal album-modal" role="dialog" aria-modal="true" aria-label="계정 비밀번호 설정" onClick={e=>e.stopPropagation()}>
+      <button className="icon-btn modal-close" aria-label="닫기" onClick={()=>setPasswordDialog(false)}><X size={21}/></button>
+      <h2>계정 비밀번호 설정</h2><p className="muted">가족 사진을 안전하게 보호하기 위해 12자 이상으로 설정하세요.</p>
+      <form onSubmit={e=>void saveNewPassword(e)}>
+        <label>새 비밀번호<input type="password" autoComplete="new-password" required minLength={12} value={passwordCandidate} onChange={e=>setPasswordCandidate(e.target.value)}/></label>
+        <label>비밀번호 확인<input type="password" autoComplete="new-password" required minLength={12} value={passwordConfirmation} onChange={e=>setPasswordConfirmation(e.target.value)}/></label>
+        {passwordError&&<p className="notice" role="alert">{passwordError}</p>}
+        <button className="btn primary full" disabled={passwordSaving}>{passwordSaving?'저장 중...':'안전한 비밀번호 저장'}</button>
+      </form>
+    </div>
+  </div>:null;
   const logout=()=>{void supa?.auth.signOut();};
   const nav=(t:Tab)=>{setTab(t);setMenu(false);if(t!=='home')setAlbum('all');};
   if(!configured)return <div className="setup"><ShieldCheck size={38}/><h1>Family Memories</h1><p>아직 데이터베이스와 비공개 저장소가 연결되지 않았습니다.</p><p>README에 따라 Supabase, Cloudflare Workers 환경변수를 설정해 주세요.</p><a href="https://github.com/Hyeopgeon-Lee/family-memory-gallery">설정 방법 보기</a></div>;
@@ -332,9 +374,10 @@ function App() {
       <p className="muted">가족 관리자가 보내준 초대 링크를 열거나 코드를 입력해 주세요.</p>
       <label>초대 코드<input value={inviteCode} onChange={e=>setInviteCode(e.target.value)} placeholder="가족에게 받은 초대 코드"/></label>
       <button className="btn primary full" disabled={!inviteCode.trim()} onClick={()=>void redeem()}>가족 앨범에 참여하기</button>
+      <button className="text-link" onClick={()=>setPasswordDialog(true)}>비밀번호 설정·변경</button>
       <button className="text-link" onClick={logout}>다른 계정으로 로그인</button>
       {toast && <p className="notice">{toast}</p>}
-    </div></div>;
+    </div>{passwordModal}</div>;
 
   return <div className="app">
     <aside className={'sidebar '+(menu?'open':'')}>
@@ -357,7 +400,7 @@ function App() {
       <header className="topbar">
         <button className="icon-btn menu-button" aria-label="메뉴" onClick={()=>setMenu(true)}><Menu size={22}/></button>
         <div className="breadcrumb"><Heart size={15} fill="currentColor"/> {me.family.name} <ChevronRight size={15}/> <span>{tab==='home'?'추억 피드':tab==='albums'?'가족 앨범':tab==='trash'?'휴지통':'가족 관리'}</span></div>
-        <div className="top-actions"><span className="private-tag"><LockKeyhole size={13}/> 가족 전용</span><button className="icon-btn" title="새로고침" onClick={()=>void reload()}><RefreshCw size={18}/></button></div>
+        <div className="top-actions"><span className="private-tag"><LockKeyhole size={13}/> 가족 전용</span><button className="icon-btn" title="계정 비밀번호 설정·변경" aria-label="계정 비밀번호 설정·변경" onClick={()=>setPasswordDialog(true)}><LockKeyhole size={18}/></button><button className="icon-btn" title="새로고침" onClick={()=>void reload()}><RefreshCw size={18}/></button></div>
       </header>
       <div className="content">
         {(tab==='home'||tab==='albums')&&<>
@@ -397,6 +440,7 @@ function App() {
     </main>
     {newAlbum&&<div className="modal-scrim" onClick={()=>setNewAlbum(false)}><div className="modal album-modal" onClick={e=>e.stopPropagation()}><button className="icon-btn modal-close" onClick={()=>setNewAlbum(false)}><X size={21}/></button><div className="eyebrow">NEW ALBUM</div><h2>새 추억 앨범</h2><p className="muted">함께한 날을 위한 앨범을 만들어보세요.</p><form onSubmit={e=>void submitAlbum(e)}><label>앨범 이름<input autoFocus required maxLength={150} value={newName} onChange={e=>setNewName(e.target.value)} placeholder="예: 우리 가족 제주 여행"/></label><label>행사 날짜 (선택)<input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)}/></label><button className="btn primary full">앨범 만들기</button></form></div></div>}
     {viewer&&<div className="modal-scrim viewer" onClick={()=>setViewer(null)}><div className="viewer-dialog" onClick={e=>e.stopPropagation()}><header><div><strong>{viewer.original_filename}</strong><small>{prettyDate(viewer.captured_at||viewer.created_at)} · {bytes(viewer.size_bytes)}</small></div><div className="viewer-actions">{viewerUrl&&<a className="icon-btn" href={viewerUrl} target="_blank" rel="noreferrer" download title="새 탭에서 원본 보기"><Download size={19}/></a>}{(canAdmin(me.role)||viewer.uploaded_by===me.user.id)&&canWrite(me.role)&&<button className="icon-btn" title="휴지통으로" onClick={()=>void deleteMedia(viewer)}><Trash2 size={19}/></button>}<button className="icon-btn" title="닫기" onClick={()=>setViewer(null)}><X size={21}/></button></div></header><div className="viewer-stage">{viewerUrl?(viewer.media_type==='image'?<img src={viewerUrl} alt={viewer.original_filename} referrerPolicy="no-referrer"/>:<video controls playsInline autoPlay src={viewerUrl}/>):<span>파일을 불러오는 중입니다...</span>}</div></div></div>}
+    {passwordModal}
     {toast&&<div className="toast" role="status"><Check size={17}/>{toast}<button onClick={()=>setToast('')} aria-label="알림 닫기"><X size={14}/></button></div>}
   </div>;
 }
