@@ -1,0 +1,89 @@
+name: Initialize family administrators (one time)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/initialize-family-admins.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  initialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Invite queued family administrators and grant membership
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import { createClient } from '@supabase/supabase-js';
+          if (!process.env.SUPABASE_SECRET_KEY) throw new Error('Missing SUPABASE_SECRET_KEY');
+          const client = createClient(
+            'https://ulwkigdzmubyhtqvyzwe.supabase.co',
+            process.env.SUPABASE_SECRET_KEY,
+            { auth: { persistSession: false, autoRefreshToken: false } }
+          );
+          const {data:requests,error:queueError}=await client
+            .from('family_admin_setup')
+            .select('id,email,username,family_id,desired_role')
+            .eq('status','pending')
+            .order('id');
+          if(queueError) throw new Error('Private provisioning queue unavailable: '+(queueError.code||'unknown'));
+          if(!requests?.length) {console.log('No pending administrator invitations');process.exit(0);}
+          if(requests.length > 2) throw new Error('Unexpected administrator request count');
+          for(const request of requests){
+            if(request.desired_role !== 'admin' || request.username !== 'jhlee') throw new Error('Unexpected administrator request');
+            const {data:existing,error:listError}=await client.auth.admin.listUsers({page:1,perPage:1000});
+            if(listError) throw new Error('Auth user lookup failed: '+listError.status);
+            let user = existing.users.find(x=>x.email?.toLowerCase()===request.email.toLowerCase());
+            let delivery='existing';
+            if(!user){
+              const invite=await client.auth.admin.inviteUserByEmail(request.email,{
+                redirectTo:'https://family.k-bigdata.kr/',
+                data:{username:request.username}
+              });
+              if(invite.error){
+                console.log('Email invitation unavailable; creating unverified account without a default password');
+                const created=await client.auth.admin.createUser({
+                  email: request.email,
+                  email_confirm:false,
+                  user_metadata:{username:request.username}
+                });
+                if(created.error||!created.data.user) throw new Error('Unable to provision admin account: '+(created.error?.status||'unknown'));
+                user=created.data.user;
+                delivery='manual-email-verification-required';
+              }else{
+                if(!invite.data.user) throw new Error('Invitation produced no user');
+                user=invite.data.user;
+                delivery='invitation-email-requested';
+              }
+            }
+            const {error:memberError}=await client.from('family_members').upsert({
+              family_id:request.family_id,
+              user_id:user.id,
+              role:'admin',
+              status:'active'
+            },{onConflict:'family_id,user_id'});
+            if(memberError) throw new Error('Admin membership failed: '+(memberError.code||'unknown'));
+            const {error:updateError}=await client.from('family_admin_setup')
+              .update({status:delivery,auth_user_id:user.id})
+              .eq('id',request.id);
+            if(updateError) throw new Error('Queue status update failed: '+(updateError.code||'unknown'));
+            console.log('Account '+request.username+': '+delivery+'; role admin saved');
+          }
+          const {data:members,error:verifyError}=await client.from('family_members')
+            .select('role,status,user_id,family_id');
+          if(verifyError) throw new Error('Membership verification failed');
+          if(members.length!==2 || members.filter(x=>x.role==='owner').length!==1 ||
+              members.filter(x=>x.role==='admin').length!==1 ||
+              members.some(x=>x.status!=='active')) throw new Error('Unexpected resulting administrator roles');
+          console.log('Verified one family with one owner and one admin');
+          JS
