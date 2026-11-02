@@ -134,3 +134,15 @@ Cloudflare API 토큰에는 최소 권한만 부여하고 코드에 커밋하지
 - 아직 미완료: Supabase Auth Redirect URL 및 SMTP 설정, GitHub Actions `VITE_API_BASE_URL` 설정, Cloudflare R2 비공개 버킷/Workers 실제 배포, 가족 최초 관리자 가입 및 가족 생성, 로그인·업로드 통합 테스트.
 - 반드시 **서울 프로젝트의 publishable key와 secret key**를 사용. 아일랜드 프로젝트의 키나 URL을 다시 사용하지 말 것.
 - 채팅에 공유된 과거 DB 비밀번호는 **운영 전에 교체 권장**, GitHub 저장소와 프런트엔드 변수에 저장하지 말 것.
+
+## 9. 이메일 인증 링크가 localhost로 이동하는 문제 해결 (2026-11-02)
+
+- 서울 프로젝트 관리자 화면: https://supabase.com/dashboard/project/ulwkigdzmubyhtqvyzwe/auth/url-configuration
+- **Site URL:** `https://family.k-bigdata.kr` (기존 `http://localhost:3000` 등은 삭제/교체)
+- **Redirect URLs 추가:** `https://family.k-bigdata.kr/**` (정확히 등록)
+- 보안상 미사용 localhost 리디렉션은 운영 설정에서 제거할 것을 권장. 개발 환경에서만 별도 필요할 때 허용.
+- 저장 후 가입 화면에 추가된 **인증 메일 다시 받기** 버튼으로 재발송하거나, 이미 이메일 인증이 완료됐다면 기존 계정으로 바로 로그인할 것.
+- React `signUp()` 및 `auth.resend()`는 모두 `https://family.k-bigdata.kr/`을 명시적으로 `emailRedirectTo`로 전달하도록 변경됨. 초대 코드가 있으면 제한된 `invite` 파라미터만 보존.
+- Supabase Dashboard의 Site URL/Redirect URLs 설정 자체는 Supabase 관리 도구의 현재 권한 범위 밖이므로 별도로 저장해야 함.
+- DB 확인 (2026-11-02): `auth.users` 1건, `email_confirmed_at IS NULL` 0건. 비밀 정보는 조회하거나 기록하지 않음.
+- 공식 문서: https://supabase.com/docs/guides/auth/redirect-urls
