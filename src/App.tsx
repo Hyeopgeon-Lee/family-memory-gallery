@@ -13,6 +13,18 @@ const KEY_SUPA = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const API_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const configured = /^https:\/\//.test(URL_SUPA) && !!KEY_SUPA && /^https:\/\//.test(API_URL);
 const supa = configured ? createClient(URL_SUPA, KEY_SUPA) : null;
+const PRODUCTION_AUTH_CALLBACK_URL = 'https://family.k-bigdata.kr/';
+
+/** Never use an incidental preview/localhost origin for production confirmation email links. */
+function emailConfirmationRedirect(): string {
+  const redirect = new URL(PRODUCTION_AUTH_CALLBACK_URL);
+  const invite = new URLSearchParams(window.location.search).get('invite');
+  if (invite && /^[a-zA-Z0-9_-]{32,256}$/.test(invite)) {
+    redirect.searchParams.set('invite', invite);
+  }
+  return redirect.toString();
+}
+
 
 type Me = { user: { id: string; email: string }; family: { id: string; name: string } | null; role: 'owner'|'admin'|'contributor'|'viewer'|null };
 type Album = { id: string; title: string; description: string; event_date: string|null; created_at: string; created_by: string };
@@ -81,13 +93,26 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
   const [password,setPassword] = useState('');
   const [message,setMessage] = useState('');
   const [busy,setBusy] = useState(false);
+  const [emailSent,setEmailSent] = useState(false);
+  const resendConfirmation = async () => {
+    if (!supa || !email.trim() || busy) return;
+    setBusy(true); setMessage('');
+    try {
+      const {error} = await supa.auth.resend({type:'signup',email:email.trim(),options:{emailRedirectTo:emailConfirmationRedirect()}});
+      if (error) throw error;
+      setEmailSent(true);
+      setMessage('인증 메일을 다시 보냈습니다. 새 메일의 링크를 확인해 주세요.');
+    } catch (e) { setMessage(e instanceof Error ? e.message : '인증 메일을 다시 보내지 못했습니다.'); }
+    finally { setBusy(false); }
+  };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); if(!supa) return;
     setBusy(true);setMessage('');
     try {
       if (signup) {
-        const {data,error} = await supa.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin + window.location.pathname + window.location.search}});
+        const {data,error} = await supa.auth.signUp({email,password,options:{emailRedirectTo:emailConfirmationRedirect()}});
         if(error) throw error;
+        setEmailSent(!data.session);
         setMessage(data.session ? '가입했습니다. 가족 초대 링크를 사용해 주세요.' : '확인 메일을 보냈습니다. 이메일 인증 후 로그인해 주세요.');
         if(data.session) onSignedIn();
       } else {
@@ -118,6 +143,7 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
           <button className="btn primary full" disabled={busy}>{busy?'처리 중...':signup?'가입하기':'가족 앨범 들어가기'} <ChevronRight size={18}/></button>
         </form>
         {message && <p className="notice" role="status">{message}</p>}
+        {signup && <button type="button" className="text-link" disabled={busy || !email.trim()} onClick={()=>void resendConfirmation()}>{emailSent?'인증 메일 다시 받기':'인증 메일이 오지 않았나요? 다시 보내기'}</button>}
         <button className="text-link" onClick={()=>{setSignup(!signup);setMessage('');}}>{signup?'이미 계정이 있나요? 로그인':'처음 방문하셨나요? 계정 만들기'}</button>
         <p className="privacy"><LockKeyhole size={14}/> 사진과 영상은 비공개 저장소에 보관됩니다.</p>
       </div>
