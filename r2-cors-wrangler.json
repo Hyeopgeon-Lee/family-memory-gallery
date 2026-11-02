@@ -9,7 +9,8 @@
         "methods": [
           "GET",
           "HEAD",
-          "PUT"
+          "PUT",
+          "POST"
         ],
         "headers": [
           "Content-Type",
