@@ -28,6 +28,9 @@ jobs:
           if (!process.env.SUPABASE_SECRET_KEY) throw new Error('Missing SUPABASE_SECRET_KEY');
           const keyFormat = process.env.SUPABASE_SECRET_KEY.startsWith('sb_secret_') ? 'sb_secret' : (process.env.SUPABASE_SECRET_KEY.startsWith('sb_publishable_') ? 'publishable_WRONG_KEY' : 'legacy_or_unknown');
           console.log('Supabase server key type:', keyFormat);
+          if (keyFormat === 'publishable_WRONG_KEY' || (keyFormat !== 'sb_secret' && !process.env.SUPABASE_SECRET_KEY.startsWith('eyJ'))) {
+            throw new Error('GitHub Actions SUPABASE_SECRET_KEY must be the server SECRET key, NOT the public publishable key. Open Seoul Supabase > Settings > API Keys > Secret keys.');
+          }
           const check = await fetch('https://ulwkigdzmubyhtqvyzwe.supabase.co/rest/v1/family_admin_setup?select=id&limit=1', {
             headers: {apikey:process.env.SUPABASE_SECRET_KEY}
           });
