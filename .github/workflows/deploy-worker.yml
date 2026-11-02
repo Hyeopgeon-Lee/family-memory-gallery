@@ -48,6 +48,10 @@ jobs:
             echo "::notice::GitHub Actions secret missing: R2_SECRET_ACCESS_KEY"
             worker_ready=false
           fi
+          if [[ -n "$SUPA_SECRET" && "$SUPA_SECRET" != sb_secret_* && "$SUPA_SECRET" != eyJ* ]]; then
+            echo "::error::SUPABASE_SECRET_KEY must contain Seoul Supabase Secret key (sb_secret_...), not a publishable key"
+            exit 1
+          fi
           if [[ -z "$SUPA_SECRET" ]]; then
             echo "::notice::GitHub Actions secret missing: SUPABASE_SECRET_KEY"
             worker_ready=false
