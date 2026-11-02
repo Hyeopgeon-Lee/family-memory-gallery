@@ -11,10 +11,11 @@
 ## DB 운영 대상 (2026-11-01)
 
 - 조직: `Family Memories` (기존 업무용 조직과 분리)
+- **배포된 가족 API:** `https://family-memory-gallery-api.k-bigdata-family.workers.dev` (Health / 401 차단 / CORS 검증 통과)
 - **서울 리전 운영 DB:** `family-memory-gallery-seoul` · `https://ulwkigdzmubyhtqvyzwe.supabase.co`
 - 기존 아일랜드 DB `ssaviinhspcqrmlaunpj`: 데이터 0건 확인 후 일시중지, 삭제하지 않음
 - Supabase 마이그레이션 3개와 7개 테이블 RLS: **적용 및 검증 완료**
-- 미완료: Auth Redirect URL, GitHub Actions Variables, Cloudflare R2/Workers 실제 배포 및 E2E 테스트
+- **Cloudflare R2 비공개 버킷, Workers API 및 GitHub Pages 연동 완료.** 미완료: Supabase Auth Redirect URL, 최초 가족 계정 생성 및 실제 사진·동영상 E2E 테스트.
 
 **Cloudflare 배포 안내:** [R2·Workers 자동 구축 및 비밀키 등록 절차](docs/CLOUDFLARE_SETUP.md)
 
