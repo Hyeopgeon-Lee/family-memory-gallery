@@ -149,7 +149,7 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
         <p className="muted">가족 구성원만 초대를 통해 앨범을 볼 수 있습니다.</p>
         <form onSubmit={submit}>
           <label>이메일<input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
-          <label>비밀번호<input required minLength={6} type="password" autoComplete={signup?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="비밀번호 입력"/></label>
+          <label>비밀번호<input required minLength={signup?12:1} type="password" autoComplete={signup?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder={signup?"12자 이상 비밀번호 입력":"비밀번호 입력"}/></label>
           <button className="btn primary full" disabled={busy}>{busy?'처리 중...':signup?'가입하기':'가족 앨범 들어가기'} <ChevronRight size={18}/></button>
         </form>
         {message && <p className="notice" role="status">{message}</p>}
