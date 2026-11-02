@@ -104,3 +104,22 @@ Worker URL의 `/api/health`가 HTTP 200 및 `{"status":"ok"}`로 응답하는지
 - Cloudflare R2 처음 활성화는 계정 소유자가 대시보드의 **Storage & databases → R2 → Overview**에서 체크아웃/구독 활성화를 완료해야 함. 무료 이용량이 있지만 이를 넘으면 종량제 요금이 발생할 수 있으므로 확인 필요.
 - 이 계정 연결이 유지되는 경우 R2 활성화 뒤 **Cloudflare API 연결을 통해 버킷/CORS/공개접근 설정을 직접 처리할 수 있음**. 이전 섹션의 GitHub API Token 발급은 GitHub Actions로 배포할 때만 필요하며, Cloudflare 연결을 통한 수동 프로비저닝 자체에는 필수 아님.
 - 아직 Supabase 서버 secret(`sb_secret_...`)과 R2 S3 전용 접근키가 Worker에 설정되어 있지 않으므로 **실제 사용자 사진을 업로드하면 안 됨**.
+
+## 2026-11-02 실제 Cloudflare R2 설정 완료
+
+Cloudflare 계정 `Soft1318@naver.com's Account` (Account ID `2489972b43f2909dca9213018d23bedf`)에서 R2 활성화를 확인하고 **Cloudflare API로 다음 리소스를 실제 생성·검증**했습니다.
+
+- 버킷 `family-media-private` 생성 성공 (Standard, APAC location hint).
+- R2 `r2.dev` public URL: `enabled=false`, 공개 사용자 지정 도메인: `[]` (없음).
+- CORS 구성 및 읽기 검증: origin `https://family.k-bigdata.kr` / `http://localhost:5173`, methods `GET, HEAD, PUT, POST`, allowed headers `Content-Type, Range, x-amz-*`, exposed headers `ETag, Content-Length, Content-Range, Accept-Ranges`, max age 3600.
+- 위 CORS는 코드의 `r2-cors-wrangler.json`와 맞춤.
+- Workers 스크립트 `family-memory-gallery-api`는 **아직 생성·배포되지 않음**. 서버 비밀키와 R2 S3 접근키가 필요함.
+- **이전 문서의 'R2 활성화 미완료' 상태는 과거 점검 기록이며, 현재 R2는 활성화 및 설정 완료입니다.**
+
+### 이후 필요한 최소 설정
+
+1. Cloudflare R2 > Manage R2 API Tokens 에서 `family-media-private` 버킷에 한정된 Object Read & Write S3 credentials 발급.
+2. Supabase Seoul `ulwkigdzmubyhtqvyzwe` 서버용 secret API key (`sb_secret_...`) 확인.
+3. 비밀키를 **채팅이나 GitHub 소스에 공유하지 말고**, GitHub Actions Secrets 또는 Cloudflare Worker Secrets 관리 화면에만 입력.
+4. Workers `family-memory-gallery-api`에 `SUPABASE_SECRET_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` 등록하고 배포 확인. `SUPABASE_URL`은 `https://ulwkigdzmubyhtqvyzwe.supabase.co`.
+5. Workers 배포 결과 URL을 GitHub Actions 변수 `VITE_API_BASE_URL`에 등록하고 Pages 재배포한 후 통합 테스트 수행.
