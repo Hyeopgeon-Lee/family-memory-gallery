@@ -26,6 +26,12 @@ jobs:
           node --input-type=module <<'JS'
           import { createClient } from '@supabase/supabase-js';
           if (!process.env.SUPABASE_SECRET_KEY) throw new Error('Missing SUPABASE_SECRET_KEY');
+          const keyFormat = process.env.SUPABASE_SECRET_KEY.startsWith('sb_secret_') ? 'sb_secret' : (process.env.SUPABASE_SECRET_KEY.startsWith('sb_publishable_') ? 'publishable_WRONG_KEY' : 'legacy_or_unknown');
+          console.log('Supabase server key type:', keyFormat);
+          const check = await fetch('https://ulwkigdzmubyhtqvyzwe.supabase.co/rest/v1/family_admin_setup?select=id&limit=1', {
+            headers: {apikey:process.env.SUPABASE_SECRET_KEY}
+          });
+          console.log('Server-only REST precheck status:', check.status, 'error code:', check.ok ? 'none' : (await check.json().catch(()=>({}))).code || 'unknown');
           const client = createClient(
             'https://ulwkigdzmubyhtqvyzwe.supabase.co',
             process.env.SUPABASE_SECRET_KEY,
@@ -36,7 +42,7 @@ jobs:
             .select('id,email,username,family_id,desired_role')
             .eq('status','pending')
             .order('id');
-          if(queueError) throw new Error('Private provisioning queue unavailable: '+(queueError.code||'unknown'));
+          if(queueError) throw new Error('Private provisioning queue unavailable: '+((queueError.code||'unknown')+' / '+(queueError.message||'unknown')));
           if(!requests?.length) {console.log('No pending administrator invitations');process.exit(0);}
           if(requests.length > 2) throw new Error('Unexpected administrator request count');
           for(const request of requests){
