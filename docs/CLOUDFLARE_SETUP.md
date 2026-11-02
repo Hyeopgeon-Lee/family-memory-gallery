@@ -95,3 +95,12 @@ Worker URL의 `/api/health`가 HTTP 200 및 `{"status":"ok"}`로 응답하는지
 - [Cloudflare GitHub Actions 배포](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/)
 - [Wrangler Secrets 배포](https://developers.cloudflare.com/workers/configuration/secrets/)
 - [R2 S3 API 키 발급](https://developers.cloudflare.com/r2/get-started/s3/)
+
+## 2026-11-02 Cloudflare 연결 및 활성화 상태
+
+- ChatGPT Cloudflare 계정 직접 관리 연결 확인: `Soft1318@naver.com's Account`, Account ID `2489972b43f2909dca9213018d23bedf`.
+- R2 목록 API는 **HTTP 403 / 오류 10042** (`Please enable R2 through the Cloudflare Dashboard.`)를 반환. 계정의 **R2 구독/서비스가 아직 활성화되지 않아** 현재 API로 버킷을 만들 수 없음.
+- Workers 스크립트 목록은 빈 배열: `family-memory-gallery-api` 미배포.
+- Cloudflare R2 처음 활성화는 계정 소유자가 대시보드의 **Storage & databases → R2 → Overview**에서 체크아웃/구독 활성화를 완료해야 함. 무료 이용량이 있지만 이를 넘으면 종량제 요금이 발생할 수 있으므로 확인 필요.
+- 이 계정 연결이 유지되는 경우 R2 활성화 뒤 **Cloudflare API 연결을 통해 버킷/CORS/공개접근 설정을 직접 처리할 수 있음**. 이전 섹션의 GitHub API Token 발급은 GitHub Actions로 배포할 때만 필요하며, Cloudflare 연결을 통한 수동 프로비저닝 자체에는 필수 아님.
+- 아직 Supabase 서버 secret(`sb_secret_...`)과 R2 S3 전용 접근키가 Worker에 설정되어 있지 않으므로 **실제 사용자 사진을 업로드하면 안 됨**.
