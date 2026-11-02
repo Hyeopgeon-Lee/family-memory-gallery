@@ -123,3 +123,16 @@ Cloudflare 계정 `Soft1318@naver.com's Account` (Account ID `2489972b43f2909dca
 3. 비밀키를 **채팅이나 GitHub 소스에 공유하지 말고**, GitHub Actions Secrets 또는 Cloudflare Worker Secrets 관리 화면에만 입력.
 4. Workers `family-memory-gallery-api`에 `SUPABASE_SECRET_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` 등록하고 배포 확인. `SUPABASE_URL`은 `https://ulwkigdzmubyhtqvyzwe.supabase.co`.
 5. Workers 배포 결과 URL을 GitHub Actions 변수 `VITE_API_BASE_URL`에 등록하고 Pages 재배포한 후 통합 테스트 수행.
+
+## 2026-11-02 Workers 실제 배포 및 사이트 연동 완료
+
+- Cloudflare Workers 계정 서브도메인 `k-bigdata-family.workers.dev` 등록 및 Worker `family-memory-gallery-api` 배포 완료.
+- **API URL: `https://family-memory-gallery-api.k-bigdata-family.workers.dev`**
+- Cloudflare 배포 기록의 최신 버전 `a683dc81-a17b-4cbc-b302-eacb462a2a53` 에 100% 트래픽 배정.
+- Workers Secret 이름 다섯 개 등록 확인: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`. Secret **값은 출력하지 않음**.
+- R2 비공개 버킷과 CORS 점검 성공.
+- GitHub Actions [공개 API 스모크 테스트](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41431624144) **성공**: Health 200, 비인증 Albums 401, 프런트엔드 Origin CORS 정상.
+- GitHub Pages에 위 Worker URL을 빌드 시 주입하고 [최신 배포](https://github.com/Hyeopgeon-Lee/family-memory-gallery/actions/runs/41431624080) **성공**.
+- 이전 GitHub 배포 실행의 **TLS 초기 핸드셰이크 실패**는 신규 workers.dev DNS 초기화 시점에서 발생했으며, 이후 별도 API 스모크 테스트 통과로 해결 확인.
+- 미확인: Supabase Auth의 Site URL/Redirect URL, 실제 사용자 계정·가족 생성, 사진/동영상 실제 업로드·열람 및 타 가족 권한 차단 통합 테스트.
+- **기존 R2 토큰이 스크린샷에 노출됐으므로 폐기하고 버킷 전용으로 새 토큰을 재발급한 뒤 GitHub Secrets를 갱신**할 것을 권장.
