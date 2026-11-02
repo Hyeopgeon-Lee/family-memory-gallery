@@ -12,7 +12,14 @@ const URL_SUPA = import.meta.env.VITE_SUPABASE_URL || '';
 const KEY_SUPA = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const API_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const configured = /^https:\/\//.test(URL_SUPA) && !!KEY_SUPA && /^https:\/\//.test(API_URL);
-const supa = configured ? createClient(URL_SUPA, KEY_SUPA) : null;
+const supa = configured ? createClient(URL_SUPA, KEY_SUPA, {
+  // Keep the existing Supabase storage key so previously saved sessions remain valid.
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+}) : null;
 const PRODUCTION_AUTH_CALLBACK_URL = 'https://family.k-bigdata.kr/';
 
 /** Never use an incidental preview/localhost origin for production confirmation email links. */
@@ -156,7 +163,7 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
         {!signup && <button type="button" className="text-link" disabled={busy || !email.trim()} onClick={()=>void sendPasswordReset()}>비밀번호를 잊으셨나요? 이메일로 재설정</button>}
         {signup && <button type="button" className="text-link" disabled={busy || !email.trim()} onClick={()=>void resendConfirmation()}>{emailSent?'인증 메일 다시 받기':'인증 메일이 오지 않았나요? 다시 보내기'}</button>}
         <button className="text-link" onClick={()=>{setSignup(!signup);setMessage('');}}>{signup?'이미 계정이 있나요? 로그인':'처음 방문하셨나요? 계정 만들기'}</button>
-        <p className="privacy"><LockKeyhole size={14}/> 사진과 영상은 비공개 저장소에 보관됩니다.</p>
+        <p className="privacy"><LockKeyhole size={14}/> 사진과 영상은 비공개 저장소에 보관됩니다. 로그인 후에는 이 브라우저에서 자동 로그인됩니다.</p>
       </div>
     </section>
   </main>;
@@ -210,9 +217,22 @@ function App() {
   },[]);
   useEffect(()=>{
     if(!supa){setChecking(false);return;}
-    void supa.auth.getSession().then(({data})=>{setSession(data.session);setChecking(false);});
-    const {data:sub}=supa.auth.onAuthStateChange((_event,s)=>{setSession(s);if(_event==='PASSWORD_RECOVERY')setPasswordDialog(true);if(!s){setMe(null);setAlbums([]);setMedia([]);}});
-    return ()=>sub.subscription.unsubscribe();
+    let active = true;
+    // INITIAL_SESSION fires after Supabase has restored the saved browser session.
+    // Rely on one auth-state stream instead of racing getSession() against this event.
+    const {data:{subscription}} = supa.auth.onAuthStateChange((event,nextSession)=>{
+      if(!active)return;
+      setSession(nextSession);
+      setChecking(false);
+      if(event==='PASSWORD_RECOVERY')setPasswordDialog(true);
+      if(event==='SIGNED_OUT'){
+        setMe(null);
+        setAlbums([]);
+        setMedia([]);
+        setUrls({});
+      }
+    });
+    return ()=>{active=false;subscription.unsubscribe();};
   },[]);
   useEffect(()=>{if(session) void reload();},[session?.user.id,reload]);
   useEffect(()=>{
